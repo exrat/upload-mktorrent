@@ -26,7 +26,7 @@
 # Variables ...... : A définir ici et ne pas modifier la suite du script
 
 # User ruTorrent & URL d'annonce
-USER=toto
+USER=exrat
 TRACKER="https://annonce.tracker.bt"
 
 # Dossier adapté pour conf ruTorrent mondedie.fr
@@ -63,14 +63,14 @@ FONCCREATE () {
 	chown "$USER":"$USER" "$FILE".torrent
 }
 
-# test presence mktorrent
-command -v mktorrent >/dev/null 2>&1
+command -v mktorrent >/dev/null 2>&1 # test presence mktorrent
 if [ $? = 1 ]; then
 	apt-get install -y mktorrent
 fi
 
 if [ "$1" = "" ]; then
-	NAME=$(whiptail --title "Nom" --inputbox "Entrez le nom du fichier ou dossier source" 10 60 3>&1 1>&2 2>&3)
+	# mode boite de dialogue
+	NAME=$(whiptail --title "Nom de la source" --inputbox "Entrez le nom du fichier ou dossier source" 10 60 3>&1 1>&2 2>&3)
 	exitstatus=$?
 	if [ $exitstatus = 0 ]; then
 		FILE=$NAME
@@ -84,8 +84,7 @@ if [ "$1" = "" ]; then
 		echo "Vous avez annulé..."
 		exit 0
 	fi
-
-	OPTION=$(whiptail --title "Taille" --menu "Choisissez la taille de pièces du .torrent" 15 60 9 \
+	OPTION=$(whiptail --title "Taille de pièces" --menu "Choisissez la taille de pièces du .torrent" 15 60 9 \
 	"1" " Automatique" \
 	"2" " 256 Ko" \
 	"3" " 512 Ko" \
@@ -118,35 +117,66 @@ if [ "$1" = "" ]; then
 		echo "Vous avez annulé..."
 		exit 0
 	fi
-
+	if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
+		REMOVE=$(whiptail --title "Erreur" --menu "Le fichier $FILE.torrent existe déjà\nvoulez vous le supprimer ?" 15 60 2 \
+		"1" " Oui" \
+		"2" " Non" 3>&1 1>&2 2>&3)
+		if [ "$REMOVE" = 1 ]; then
+			rm -f /home/"$USER"/"$FILE".torrent
+		elif [ "$REMOVE" = 2 ]; then
+			whiptail --title "Annulation" --msgbox " Création $FILE.torrent annulé" 13 60
+			exit 0
+		else
+			whiptail --title "Annulation" --msgbox " Création $FILE.torrent annulé" 13 60
+		exit 0
+		fi
+	fi
 	FONCCREATE
 	SEED=$(whiptail --title "Mise en seed" --menu "Voulez vous mettre le torrent en seed ?" 15 60 2 \
 	"1" " Oui" \
 	"2" " Non" 3>&1 1>&2 2>&3)
-
 	if [ "$SEED" = 1 ]; then
 		mv "$FILE".torrent "$WATCH"/"$FILE".torrent
 		whiptail --title "Ok" --msgbox " Torrent crée en:\n $WATCH/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
 	elif [ "$SEED" = 2 ]; then
-		mv "$FILE".torrent /home/"$USER"/"$FILE".torrent
+		if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
+			echo
+		else # en cas de déplacement du script
+			mv "$FILE".torrent /home/"$USER"/"$FILE".torrent
+		fi
 		whiptail --title "Ok" --msgbox " Torrent crée en:\n /home/$USER/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
 	else
 		rm "$FILE".torrent
-		echo "Vous avez annulé..."
+		whiptail --title "Annulation" --msgbox " Création $FILE.torrent annulé" 13 60
 		exit 0
 	fi
 elif [ "$1" = "--auto" ]; then
+	# mode full auto
 	FILE="$2"
+	if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
+		rm -f /home/"$USER"/"$FILE".torrent # anti doublon multi test
+	fi
 	FONCAUTO
 	FONCCREATE
 	mv "$FILE".torrent "$WATCH"/"$FILE".torrent
 else
+	# mode semi auto
 	FILE="$1"
 	if [ -d "$TORRENT/$FILE" ] || [ -f "$TORRENT/$FILE" ]; then
 		echo
 	else
 		echo "Erreur, vérifiez le nom du dossier ou fichier source"
 		exit 0
+	fi
+	if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
+		echo -n -e "$1.torrent existe déjà, voulez vous le supprimer ? (y/n): "
+		read -r REMOVE
+
+		if [ "$REMOVE" = "y" ]; then
+			rm -f /home/"$USER"/"$FILE".torrent
+		else
+			exit 0
+		fi
 	fi
 	FONCAUTO
 	FONCCREATE
@@ -156,7 +186,11 @@ else
 		mv "$FILE".torrent "$WATCH"/"$FILE".torrent
 		echo "$FILE.torrent en seed"
 	else
-		mv "$FILE".torrent /home/"$USER"/"$FILE".torrent
-		echo "$FILE.torrent en /home/$USER"
+		if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
+			echo
+		else # en cas de déplacement du script
+			mv "$FILE".torrent /home/"$USER"/"$FILE".torrent
+		fi
 	fi
+		echo "$FILE.torrent en /home/$USER"
 fi
