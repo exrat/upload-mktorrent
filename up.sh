@@ -20,7 +20,7 @@
 # Choix de mise en seed ou stockage en /home/user
 #
 # ./up.sh --auto fichier.xx (ou dossier)
-# Pour utilisation sur script d'upload auto ou mise en seed direct
+# Mise en seed direct ou pour utilisation avec script d'upload auto
 # Seed auto et pas de verif' sur la présence de la source !
 
 # Variables ...... : A définir ici et ne pas modifier la suite du script
@@ -34,7 +34,7 @@ TRACKER="https://annonce.tracker.bt"
 TORRENT="/home/$USER/torrents"
 WATCH="/home/$USER/watch"
 
-####################################
+##############################
 
 FONCAUTO () {
 	TAILLE=$(du -s "$TORRENT"/"$FILE" | awk '{ print $1 }')
@@ -63,15 +63,20 @@ FONCCREATE () {
 	chown "$USER":"$USER" "$FILE".torrent
 }
 
+FONCANNUL () {
+	whiptail --title "Annulation" --msgbox " Création $FILE.torrent annulé" 13 60
+	exit 0
+}
+
 command -v mktorrent >/dev/null 2>&1 # test presence mktorrent
 if [ $? = 1 ]; then
 	apt-get install -y mktorrent
 fi
 
-if [ "$1" = "" ]; then
-	# mode boite de dialogue
+if [ "$1" = "" ]; then # mode boite de dialogue
 	NAME=$(whiptail --title "Nom de la source" --inputbox "Entrez le nom du fichier ou dossier source" 10 60 3>&1 1>&2 2>&3)
 	exitstatus=$?
+
 	if [ $exitstatus = 0 ]; then
 		FILE=$NAME
 		if [ -d "$TORRENT/$FILE" ] || [ -f "$TORRENT/$FILE" ]; then
@@ -81,9 +86,9 @@ if [ "$1" = "" ]; then
 			exit 0
 		fi
 	else
-		echo "Vous avez annulé..."
-		exit 0
+		FONCANNUL
 	fi
+
 	OPTION=$(whiptail --title "Taille de pièces" --menu "Choisissez la taille de pièces du .torrent" 15 60 9 \
 	"1" " Automatique" \
 	"2" " 256 Ko" \
@@ -114,27 +119,27 @@ if [ "$1" = "" ]; then
 	elif [ "$OPTION" = 9 ]; then
 		PIECE=25 # 32768 bytes
 	else
-		echo "Vous avez annulé..."
-		exit 0
+		FONCANNUL
 	fi
+
 	if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
-		REMOVE=$(whiptail --title "Erreur" --menu "Le fichier $FILE.torrent existe déjà\nvoulez vous le supprimer ?" 15 60 2 \
+		REMOVE=$(whiptail --title "Erreur" --menu "Le fichier $FILE.torrent existe déjà en :\n/home/$USER/$FILE.torrent\nvoulez vous le supprimer ?" 15 60 2 \
 		"1" " Oui" \
 		"2" " Non" 3>&1 1>&2 2>&3)
 		if [ "$REMOVE" = 1 ]; then
 			rm -f /home/"$USER"/"$FILE".torrent
 		elif [ "$REMOVE" = 2 ]; then
-			whiptail --title "Annulation" --msgbox " Création $FILE.torrent annulé" 13 60
-			exit 0
+			FONCANNUL
 		else
-			whiptail --title "Annulation" --msgbox " Création $FILE.torrent annulé" 13 60
-		exit 0
+			FONCANNUL
 		fi
 	fi
+
 	FONCCREATE
 	SEED=$(whiptail --title "Mise en seed" --menu "Voulez vous mettre le torrent en seed ?" 15 60 2 \
 	"1" " Oui" \
 	"2" " Non" 3>&1 1>&2 2>&3)
+
 	if [ "$SEED" = 1 ]; then
 		mv "$FILE".torrent "$WATCH"/"$FILE".torrent
 		whiptail --title "Ok" --msgbox " Torrent crée en:\n $WATCH/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
@@ -147,27 +152,30 @@ if [ "$1" = "" ]; then
 		whiptail --title "Ok" --msgbox " Torrent crée en:\n /home/$USER/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
 	else
 		rm "$FILE".torrent
-		whiptail --title "Annulation" --msgbox " Création $FILE.torrent annulé" 13 60
-		exit 0
+		FONCANNUL
 	fi
-elif [ "$1" = "--auto" ]; then
-	# mode full auto
+
+elif [ "$1" = "--auto" ]; then # mode full auto
 	FILE="$2"
+
 	if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
 		rm -f /home/"$USER"/"$FILE".torrent # anti doublon multi test
 	fi
+
 	FONCAUTO
 	FONCCREATE
 	mv "$FILE".torrent "$WATCH"/"$FILE".torrent
-else
-	# mode semi auto
+
+else # mode semi auto
 	FILE="$1"
+
 	if [ -d "$TORRENT/$FILE" ] || [ -f "$TORRENT/$FILE" ]; then
 		echo
 	else
 		echo "Erreur, vérifiez le nom du dossier ou fichier source"
 		exit 0
 	fi
+
 	if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
 		echo -n -e "$1.torrent existe déjà, voulez vous le supprimer ? (y/n): "
 		read -r REMOVE
@@ -178,10 +186,12 @@ else
 			exit 0
 		fi
 	fi
+
 	FONCAUTO
 	FONCCREATE
 	echo -n -e "Voulez vous mettre le torrent en seed ? (y/n): "
 	read -r SEED
+
 	if [ "$SEED" = "y" ]; then
 		mv "$FILE".torrent "$WATCH"/"$FILE".torrent
 		echo "$FILE.torrent en seed"
