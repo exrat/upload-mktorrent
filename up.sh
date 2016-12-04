@@ -21,7 +21,7 @@
 #
 # ./up.sh --auto fichier.xx (ou dossier)
 # Mise en seed direct ou pour utilisation avec script d'upload auto
-# Seed auto et pas de verif' sur la présence de la source !
+# Pas de verif' sur la présence de la source, attention à la typo !
 
 # Variables ...... : A définir ici et ne pas modifier la suite du script
 
@@ -142,14 +142,14 @@ if [ "$1" = "" ]; then # mode boite de dialogue
 
 	if [ "$SEED" = 1 ]; then
 		mv "$FILE".torrent "$WATCH"/"$FILE".torrent
-		whiptail --title "Ok" --msgbox " Torrent crée en:\n $WATCH/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
+		whiptail --title "Ok" --msgbox " Torrent ajouté en:\n $WATCH/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
 	elif [ "$SEED" = 2 ]; then
 		if [ -d /home/"$USER/$FILE".torrent ] || [ -f /home/"$USER/$FILE".torrent ]; then
 			echo
 		else # en cas de déplacement du script
 			mv "$FILE".torrent /home/"$USER"/"$FILE".torrent
 		fi
-		whiptail --title "Ok" --msgbox " Torrent crée en:\n /home/$USER/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
+		whiptail --title "Ok" --msgbox " Torrent ajouté en:\n /home/$USER/$FILE.torrent\n Source:\n $TORRENT/$FILE" 13 60
 	else
 		rm "$FILE".torrent
 		FONCANNUL
@@ -200,7 +200,7 @@ else # mode semi auto
 			echo
 		else # en cas de déplacement du script
 			mv "$FILE".torrent /home/"$USER"/"$FILE".torrent
+			echo "$FILE.torrent en /home/$USER"
 		fi
 	fi
-		echo "$FILE.torrent en /home/$USER"
 fi
