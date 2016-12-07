@@ -34,32 +34,44 @@ TRACKER="https://annonce.tracker.bt"
 TORRENT="/home/$USER/torrents"
 WATCH="/home/$USER/watch"
 
+# Récupération threads
+THREAD=$(grep -c processor < /proc/cpuinfo)
+if [ "$THREAD" = "" ]; then
+	THREAD=1
+fi
+
 ##############################
 
 FONCAUTO () {
 	TAILLE=$(du -s "$TORRENT"/"$FILE" | awk '{ print $1 }')
 
-	if [ "$TAILLE" -lt 524288 ]; then
-		PIECE=18 # 256 bytes
-	elif [ "$TAILLE" -lt 1048576 ]; then
-		PIECE=19 # 512 bytes
-	elif [ "$TAILLE" -lt 2097152 ]; then
-		PIECE=20 # 1024 bytes
-	elif [ "$TAILLE" -lt 4194304 ]; then
-		PIECE=21  # 2048 bytes
-	elif [ "$TAILLE" -lt 8388608 ]; then
-		PIECE=22 # 4096 bytes
-	elif [ "$TAILLE" -lt 16777216 ]; then
-		PIECE=23 # 8192 bytes
-	elif [ "$TAILLE" -lt 33554432 ]; then
-		PIECE=24 # 16384 bytes
-	else
-		PIECE=25 # 32768 bytes
+	if [ "$TAILLE" -lt 65536 ]; then # - de 64 Mo
+		PIECE=15 # 32 Ko
+	elif [ "$TAILLE" -lt 131072 ]; then # - de 128 Mo
+		PIECE=16 # 64 Ko
+	elif [ "$TAILLE" -lt 262144 ]; then # - de 256 Mo
+		PIECE=17 # 128 Ko
+	elif [ "$TAILLE" -lt 524288 ]; then # - de 512 Mo
+		PIECE=18 # 256 Ko
+	elif [ "$TAILLE" -lt 1048576 ]; then # - de 1 Go
+		PIECE=19 # 512 Ko
+	elif [ "$TAILLE" -lt 2097152 ]; then # - de 2 Go
+		PIECE=20 # 1 Mo
+	elif [ "$TAILLE" -lt 4194304 ]; then # - de 4 Go
+		PIECE=21  # 2 Mo
+	elif [ "$TAILLE" -lt 8388608 ]; then # - de 8 Go
+		PIECE=22 # 4 Mo
+	elif [ "$TAILLE" -lt 16777216 ]; then # - de 16 Go
+		PIECE=23 # 8 Mo
+	elif [ "$TAILLE" -lt 33554432 ]; then # - de 32 Go
+		PIECE=24 # 16 Mo
+	elif [ "$TAILLE" -ge 33554432 ]; then # + de 32 Go
+		PIECE=25 # 32 Mo
 	fi
 }
 
 FONCCREATE () {
-	mktorrent -p -l "$PIECE" -a "$TRACKER" "$TORRENT"/"$FILE"
+	mktorrent -p -l "$PIECE" -a "$TRACKER" -t "$THREAD" "$TORRENT"/"$FILE"
 	chown "$USER":"$USER" "$FILE".torrent
 }
 
@@ -89,35 +101,44 @@ if [ "$1" = "" ]; then # mode boite de dialogue
 		FONCANNUL
 	fi
 
-	OPTION=$(whiptail --title "Taille de pièces" --menu "Choisissez la taille de pièces du .torrent" 15 60 9 \
-	"1" " Automatique" \
-	"2" " 256 Ko" \
-	"3" " 512 Ko" \
-	"4" "   1 Mo" \
-	"5" "   2 Mo" \
-	"6" "   4 Mo" \
-	"7" "   8 Mo" \
-	"8" "  16 Mo" \
-	"9" "  32 Mo" 3>&1 1>&2 2>&3)
+	OPTION=$(whiptail --title "Taille de pièces" --menu "Choisissez la taille de pièces du .torrent" 15 60 8 \
+	"01" " Automatique" \
+	"02" "  32 Ko" \
+	"03" "  64 Ko" \
+	"04" " 128 Ko" \
+	"05" " 256 Ko" \
+	"06" " 512 Ko" \
+	"07" "   1 Mo" \
+	"08" "   2 Mo" \
+	"09" "   4 Mo" \
+	"10" "   8 Mo" \
+	"11" "  16 Mo" \
+	"12" "  32 Mo" 3>&1 1>&2 2>&3)
 
-	if [ "$OPTION" = 1 ]; then
+	if [ "$OPTION" = 01 ]; then
 		FONCAUTO
-	elif [ "$OPTION" = 2 ]; then
-		PIECE=18 # 256 bytes
-	elif [ "$OPTION" = 3 ]; then
-		PIECE=19 # 512 bytes
-	elif [ "$OPTION" = 4 ]; then
-		PIECE=20 # 1024 bytes
-	elif [ "$OPTION" = 5 ]; then
-		PIECE=21  # 2048 bytes
-	elif [ "$OPTION" = 6 ]; then
-		PIECE=22 # 4096 bytes
-	elif [ "$OPTION" = 7 ]; then
-		PIECE=23 # 8192 bytes
-	elif [ "$OPTION" = 8 ]; then
-		PIECE=24 # 16384 bytes
-	elif [ "$OPTION" = 9 ]; then
-		PIECE=25 # 32768 bytes
+	elif [ "$OPTION" = 02 ]; then
+		PIECE=15 # 32 Ko
+	elif [ "$OPTION" = 03 ]; then
+		PIECE=16 # 64 Ko
+	elif [ "$OPTION" = 04 ]; then
+		PIECE=17 # 128 Ko
+	elif [ "$OPTION" = 05 ]; then
+		PIECE=18 # 256 Ko
+	elif [ "$OPTION" = 06 ]; then
+		PIECE=19 # 512 Ko
+	elif [ "$OPTION" = 07 ]; then
+		PIECE=20 # 1 Go
+	elif [ "$OPTION" = 08 ]; then
+		PIECE=21  # 2 Go
+	elif [ "$OPTION" = 09 ]; then
+		PIECE=22 # 4 Go
+	elif [ "$OPTION" = 10 ]; then
+		PIECE=23 # 8 Go
+	elif [ "$OPTION" = 11 ]; then
+		PIECE=24 # 16 Go
+	elif [ "$OPTION" = 12 ]; then
+		PIECE=25 # 32 Go
 	else
 		FONCANNUL
 	fi
