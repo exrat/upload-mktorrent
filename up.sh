@@ -1,27 +1,7 @@
 #!/bin/bash
 #
-# Nom du script .. : up.sh
-# Date ........... : 12.2016
 # Auteur ......... : ex_rat d'après le script d'Aerya | https://upandclear.org
 #                    https://upandclear.org/2016/09/29/script-simpliste-de-creation-de-torrent/
-# # Description .... : Dossier/Fichier vers .torrent
-#                      Taille pieces automatisée ou non
-#                      Mise en seed
-# Prerequis ...... : mktorrent (installé en cas de défaut)
-#                    les fichiers ou dossiers sources se trouvent en /home/user/torrents
-# Execution ...... :
-#
-# ./up.sh
-# Boîtes de dialogues
-# choix de taille des pièces du .torrent
-# Choix de la mise en seed ou stockage en /home/user
-#
-# ./up.sh fichier.xx (ou dossier)
-# Choix de mise en seed ou stockage en /home/user
-#
-# ./up.sh --auto fichier.xx (ou dossier)
-# Mise en seed direct ou pour utilisation avec script d'upload auto
-# Pas de verif' sur la présence de la source, attention à la typo !
 
 # Variables ...... : A définir ici et ne pas modifier la suite du script
 
@@ -31,16 +11,18 @@ TRACKER="https://annonce.tracker.bt"
 
 # Dossier adapté pour conf ruTorrent mondedie.fr
 # On ne touche pas si on n'a pas une bonne raison
+# Pour Transmission, ce sera surement: TORRENT="/home/$USER/download" (jamais testé !)
+
 TORRENT="/home/$USER/torrents"
 WATCH="/home/$USER/watch"
+
+##################################################
 
 # Récupération threads
 THREAD=$(grep -c processor < /proc/cpuinfo)
 if [ "$THREAD" = "" ]; then
 	THREAD=1
 fi
-
-##############################
 
 FONCAUTO () {
 	TAILLE=$(du -s "$TORRENT"/"$FILE" | awk '{ print $1 }')
