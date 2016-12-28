@@ -4,7 +4,7 @@
 
  https://upandclear.org/2016/09/29/script-simpliste-de-creation-de-torrent/
 
-### Installation (en /home/user)
+### Installation (remplacer user partout !)
 ```
 cd /tmp
 git clone https://github.com/exrat/upload-mktorrent
@@ -12,18 +12,29 @@ cp /tmp/upload-mktorrent/up.sh /home/user/up.sh
 chmod a+x /home/user/up.sh
 ```
 
- Modifier les variables en début:
+ Modifier les variables en début de script:
+
+```
+nano /home/user/up.sh
+```
+
 ```
 # User ruTorrent & URL d'annonce
 USER=toto
 TRACKER="https://annonce.tracker.bt"
 ```
 
-* Dans tous les cas, les fichiers sources sont en /home/user/torrents
+* Par défaut les fichiers sources sont en /home/user/torrents (modifiable, voir variables)
 * En cas de non mise en seed, le fichier .torrent sera stocké en /home/user
+* La mise en seed intégré n'est possible qu'avec ruTorrent
 
 ### 3 Utilisations possible
- 
+
+* Passez dans votre /home/user
+```
+cd /home/user
+```
+
 * Full auto, taille de pièces & mise en seed automatique
 ```
 ./up.sh --auto fichier.xx (ou dossier)
